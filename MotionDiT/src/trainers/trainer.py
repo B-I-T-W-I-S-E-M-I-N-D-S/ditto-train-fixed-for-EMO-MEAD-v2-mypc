@@ -363,7 +363,7 @@ class Trainer:
         DAM = DictAverageMeter()
         self.LMDM.train()
         self.local_step = 0
-        for data_dict in tqdm(data_loader, disable=not self.is_main_process):
+        for data_dict in tqdm(data_loader, disable=True):
             self.global_step += 1
             self.local_step += 1
             loss, loss_dict = self._train_one_step(data_dict)
@@ -385,7 +385,7 @@ class Trainer:
             return None
         DAM = DictAverageMeter()
         self.LMDM.eval()
-        for data_dict in tqdm(self.val_loader, disable=not self.is_main_process, desc="val"):
+        for data_dict in tqdm(self.val_loader, disable=True):
             loss, loss_dict = self._train_one_step(data_dict)
             if self.is_main_process:
                 loss_dict['total_loss'] = loss
@@ -488,17 +488,41 @@ class Trainer:
                     self.ckpt_file_list_for_clear.insert(0, _ckpt)
 
     def _export_best_checkpoint_to_pth(self):
-        """Export best checkpoint weights to a fixed .pth path once training ends."""
+        """Export best (or last available) checkpoint weights to a fixed .pth path once training ends."""
         if not self.is_main_process:
             return
 
+        # 1st priority: best checkpoint
         candidate_best_paths = [
             os.path.join(self.ckpt_path, "best.pt"),
             os.path.join(self.ckpt_path, "best_model.pt"),
         ]
         best_ckpt_path = next((p for p in candidate_best_paths if os.path.exists(p)), None)
+
+        # 2nd priority: last checkpoint
         if best_ckpt_path is None:
-            tqdm.write("[POST-TRAIN EXPORT] No best checkpoint found; skipping .pth export.")
+            tqdm.write("[POST-TRAIN EXPORT] No best checkpoint found; falling back to last checkpoint.")
+            candidate_last_paths = [
+                os.path.join(self.ckpt_path, "last_model.pt"),
+                os.path.join(self.ckpt_path, "resume_last.pt"),
+            ]
+            best_ckpt_path = next((p for p in candidate_last_paths if os.path.exists(p)), None)
+
+        # 3rd priority: highest-numbered resume_epoch_*.pt
+        if best_ckpt_path is None and os.path.exists(self.ckpt_path):
+            resume_files = [
+                f for f in os.listdir(self.ckpt_path)
+                if f.startswith("resume_epoch_") and f.endswith(".pt")
+            ]
+            if resume_files:
+                resume_files.sort(
+                    key=lambda f: int(f.replace("resume_epoch_", "").replace(".pt", ""))
+                )
+                best_ckpt_path = os.path.join(self.ckpt_path, resume_files[-1])
+                tqdm.write(f"[POST-TRAIN EXPORT] Using latest epoch checkpoint: {best_ckpt_path}")
+
+        if best_ckpt_path is None:
+            tqdm.write("[POST-TRAIN EXPORT] No checkpoint found at all; skipping .pth export.")
             return
 
         target_pth = os.path.join(
