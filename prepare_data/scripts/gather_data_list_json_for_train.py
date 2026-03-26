@@ -21,7 +21,7 @@ from utils.utils import load_json, dump_json
 """
 
 
-def check_one_v2(data, N_thre=81):
+def check_one_v2(data, N_thre=10):
     ns = []
     for k, v in data.items():
 
