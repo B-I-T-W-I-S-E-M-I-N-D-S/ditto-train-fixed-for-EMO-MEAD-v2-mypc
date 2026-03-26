@@ -137,26 +137,49 @@ python example/get_data_info_json_for_MEAD.py
 bash prepare_data/prepare_data_MEAD.sh
 
 
+# accelerate launch MotionDiT/train.py \
+#     --experiment_dir experiments/s2 \
+#     --experiment_name mead_run1 \
+#     --data_list_json example/MEAD/train/data_list.json \
+#     --mead_train_data_list_json example/MEAD/train/data_list.json \
+#     --mead_val_data_list_json example/MEAD/val/data_list.json \
+#     --use_sc \
+#     --use_last_frame \
+#     --use_last_frame_loss \
+#     --use_emo \
+#     --use_eye_open \
+#     --use_eye_ball \
+#     --audio_feat_dim 1103 \
+#     --motion_feat_dim 265 \
+#     --batch_size 100 \
+#     --num_workers 8 \
+#     --epochs 3 \
+#     --save_ckpt_freq 1 \
+#     --data_preload \
+#     --data_preload_pkl "$DATA_PRELOAD_PKL"
+
 accelerate launch MotionDiT/train.py \
     --experiment_dir experiments/s2 \
-    --experiment_name mead_run1 \
+    --experiment_name emo2vec_run \
     --data_list_json example/MEAD/train/data_list.json \
     --mead_train_data_list_json example/MEAD/train/data_list.json \
     --mead_val_data_list_json example/MEAD/val/data_list.json \
-    --use_sc \
-    --use_last_frame \
-    --use_last_frame_loss \
     --use_emo \
+    --use_emo2vec \
+    --use_sc \
     --use_eye_open \
     --use_eye_ball \
+    --use_last_frame \
+    --use_last_frame_loss \
     --audio_feat_dim 1103 \
     --motion_feat_dim 265 \
-    --batch_size 100 \
+    --emotion_feat_dim 1024 \
+    --num_emotion_tokens 4 \
+    --batch_size 64 \
     --num_workers 8 \
-    --epochs 3 \
-    --save_ckpt_freq 1 \
-    --data_preload \
-    --data_preload_pkl "$DATA_PRELOAD_PKL"
+    --epochs 3
+
+
 
 # training outputs in `example/exp_dir/exp_trainset_example`
 ```
