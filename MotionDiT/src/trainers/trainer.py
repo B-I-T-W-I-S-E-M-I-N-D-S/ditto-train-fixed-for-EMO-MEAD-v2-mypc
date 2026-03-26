@@ -417,7 +417,7 @@ class Trainer:
                 v = loss_avg.get(k, None)
                 if v is None:
                     continue
-                parts.append(f"{k}: {float(v):.6f}")a
+                parts.append(f"{k}: {float(v):.6f}")
             return " | ".join(parts)
 
         # train loss (full breakdown)
